@@ -1,5 +1,6 @@
 package com.library.library.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import com.library.common.model.Timer;
 import lombok.Getter;
@@ -20,5 +21,6 @@ public class Genre extends Timer{
     private String name;
 
     @ManyToMany(mappedBy = "genres")
+    @JsonIgnoreProperties({"authors", "genres"})
     private Set<Book> books;
 }
