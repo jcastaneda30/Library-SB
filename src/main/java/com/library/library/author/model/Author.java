@@ -1,11 +1,12 @@
-package com.library.library.model;
+package com.library.library.author.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.library.library.book.model.Book;
 import com.library.common.model.Timer;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -21,6 +22,5 @@ public class Author extends Timer {
     private String alias;
 
     @ManyToMany(mappedBy = "authors")
-    @JsonIgnoreProperties({"authors", "genres"})
-    private Set<Book> books;
+    private Set<Book> books = new HashSet<>();
 }

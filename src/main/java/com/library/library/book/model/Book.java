@@ -1,6 +1,7 @@
-package com.library.library.model;
+package com.library.library.book.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.library.library.author.model.Author;
+import com.library.library.genre.model.Genre;
 import com.library.common.model.Timer;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -34,7 +35,6 @@ public class Book extends Timer {
             joinColumns = @JoinColumn(name = "book_id"), // 2. Columna que apunta a esta clase (Book)
             inverseJoinColumns = @JoinColumn(name = "author_id") // 3. Columna que apunta a la otra clase (Author)
     )
-    @JsonIgnoreProperties({"books"})
     private Set<Author> authors = new HashSet<>();
 
     @ManyToMany
@@ -43,6 +43,5 @@ public class Book extends Timer {
             joinColumns = @JoinColumn(name = "book_id"), // 2. Columna que apunta a esta clase (Book)
             inverseJoinColumns = @JoinColumn(name = "genre_id") // 3. Columna que apunta a la otra clase (Author)
     )
-    @JsonIgnoreProperties({"books"})
     private Set<Genre> genres = new HashSet<>();
 }
