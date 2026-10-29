@@ -42,3 +42,5 @@ secrets.yml
 .git-hooks/
 node_modules
 /.kotlin/
+# Variables de entorno locales (credenciales)
+.env
