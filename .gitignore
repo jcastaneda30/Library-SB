@@ -42,5 +42,8 @@ secrets.yml
 .git-hooks/
 node_modules
 /.kotlin/
+# Imágenes descargadas por el scraper
+/data
+
 # Variables de entorno locales (credenciales)
 .env

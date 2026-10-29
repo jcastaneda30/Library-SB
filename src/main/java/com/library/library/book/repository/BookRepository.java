@@ -19,4 +19,8 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     @Override
     @EntityGraph(attributePaths = {"authors", "genres"})
     Optional<Book> findById(Long id);
+
+    Optional<Book> findBySourceUrl(String sourceUrl);
+
+    Optional<Book> findByTitle(String title);
 }

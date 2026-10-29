@@ -18,4 +18,6 @@ public interface GenreRepository extends JpaRepository<Genre, Long> {
     @Override
     @EntityGraph(attributePaths = {"books"})
     Optional<Genre> findById(Long id);
+
+    Optional<Genre> findByNameIgnoreCase(String name);
 }

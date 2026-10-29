@@ -2,6 +2,7 @@ package com.library.library.book.model;
 
 import com.library.library.author.model.Author;
 import com.library.library.genre.model.Genre;
+import com.library.library.image.model.Image;
 import com.library.common.model.Timer;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -24,10 +25,20 @@ public class Book extends Timer {
     private String title;
     @Column(nullable = false)
     private String description;
-    @Column(nullable = false)
-    private int pages;
-    @Column(nullable = false)
+    // Opcionales: un libro importado por el scraper no los tiene
+    private Integer pages;
     private LocalDateTime publishedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cover_image_id")
+    private Image coverImage;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NovelStatus status = NovelStatus.UNKNOWN;
+    private Integer totalChapters;
+    // Página de la que se importó; identifica el libro al volver a scrapearlo
+    @Column(unique = true)
+    private String sourceUrl;
 
     @ManyToMany
     @JoinTable(

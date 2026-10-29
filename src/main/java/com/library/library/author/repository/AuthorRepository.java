@@ -18,4 +18,6 @@ public interface AuthorRepository extends JpaRepository<Author, Long> {
     @Override
     @EntityGraph(attributePaths = {"books"})
     Optional<Author> findById(Long id);
+
+    Optional<Author> findFirstByAliasIgnoreCase(String alias);
 }
