@@ -1,5 +1,6 @@
 package com.library.scraper.engine;
 
+import com.library.scraper.site.model.PageKind;
 import com.library.scraper.site.model.ScraperField;
 import com.library.scraper.site.model.ScraperRule;
 import com.library.scraper.site.model.ScraperSite;
@@ -40,7 +41,7 @@ public class NovelScraper {
 
     // La ficha siempre se lee de la URL de la novela que se pidió
     public NovelScrape scrapeNovel(ScraperSite site, String novelUrl) {
-        Page page = pageFetcher.fetchPage(novelUrl, site);
+        Page page = pageFetcher.fetchPage(novelUrl, site, PageKind.NOVEL);
         return new NovelScrape(page, parseNovel(page, site.getRules()));
     }
 
@@ -86,7 +87,7 @@ public class NovelScraper {
 
         Page current = site.getChapterListUrlTemplate() == null
                 ? scrape.page()
-                : pageFetcher.fetchPage(UrlTemplate.expand(site.getChapterListUrlTemplate(), variables), site);
+                : pageFetcher.fetchPage(UrlTemplate.expand(site.getChapterListUrlTemplate(), variables), site, PageKind.CHAPTER_LIST);
         Set<String> chapters = new LinkedHashSet<>();
         Set<String> visited = new HashSet<>(Set.of(current.url()));
         for (int pages = 1; current != null; pages++) {
@@ -97,13 +98,13 @@ public class NovelScraper {
             Optional<String> next = ruleEvaluator.first(current, rules, ScraperField.CHAPTER_LIST_NEXT)
                     .map(link -> resolve(pageUrl, link))
                     .filter(visited::add);
-            current = next.isPresent() && pages < MAX_CHAPTER_LIST_PAGES ? pageFetcher.fetchPage(next.get(), site) : null;
+            current = next.isPresent() && pages < MAX_CHAPTER_LIST_PAGES ? pageFetcher.fetchPage(next.get(), site, PageKind.CHAPTER_LIST) : null;
         }
         return new ArrayList<>(chapters);
     }
 
     public ScrapedChapter scrapeChapter(ScraperSite site, String chapterUrl) {
-        return parseChapter(pageFetcher.fetchPage(chapterUrl, site), site.getRules());
+        return parseChapter(pageFetcher.fetchPage(chapterUrl, site, PageKind.CHAPTER), site.getRules());
     }
 
     public ScrapedChapter parseChapter(Page page, List<ScraperRule> rules) {

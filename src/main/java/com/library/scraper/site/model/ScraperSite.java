@@ -33,6 +33,21 @@ public class ScraperSite extends Timer {
     @Column(nullable = false)
     private int requestDelayMs = 1000;
 
+    // Páginas que se abren en un navegador sin interfaz, para sitios que cargan el contenido con JavaScript
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private JavascriptRendering javascriptRendering = JavascriptRendering.NONE;
+    // Elemento que debe aparecer en las páginas renderizadas antes de leerlas (p. ej. ".reader-content p")
+    private String waitForSelector;
+
+    public boolean rendersWithBrowser(PageKind kind) {
+        return switch (javascriptRendering) {
+            case NONE -> false;
+            case CHAPTERS -> kind == PageKind.CHAPTER;
+            case ALL -> true;
+        };
+    }
+
     // Los datos de la novela se leen de la URL pedida; estas plantillas solo ubican los capítulos.
     // URL del índice de capítulos; por defecto la página de la novela
     private String chapterListUrlTemplate;

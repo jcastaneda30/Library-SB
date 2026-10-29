@@ -1,5 +1,6 @@
 package com.library.scraper.engine;
 
+import com.library.scraper.site.model.PageKind;
 import com.library.scraper.site.model.ScraperSite;
 import org.jsoup.Jsoup;
 import org.springframework.stereotype.Component;
@@ -29,14 +30,22 @@ public class PageFetcher {
             .connectTimeout(TIMEOUT)
             .build();
     private final ObjectMapper objectMapper;
+    private final BrowserRenderer browserRenderer;
     // Momento a partir del cual se puede volver a pedir algo a cada host
     private final Map<String, Long> nextRequestByHost = new ConcurrentHashMap<>();
 
-    public PageFetcher(ObjectMapper objectMapper) {
+    public PageFetcher(ObjectMapper objectMapper, BrowserRenderer browserRenderer) {
         this.objectMapper = objectMapper;
+        this.browserRenderer = browserRenderer;
     }
 
-    public Page fetchPage(String url, ScraperSite site) {
+    public Page fetchPage(String url, ScraperSite site, PageKind kind) {
+        if (site.rendersWithBrowser(kind)) {
+            // El sitio arma el contenido en el navegador: se lee el HTML ya renderizado
+            throttle(URI.create(url).getHost(), site.getRequestDelayMs());
+            BrowserRenderer.RenderedPage rendered = browserRenderer.render(url, site);
+            return new Page.Html(rendered.url(), Jsoup.parse(rendered.html(), rendered.url()));
+        }
         FetchResult result = fetch(url, site);
         if (isJson(result)) {
             try {

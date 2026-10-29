@@ -1,5 +1,6 @@
 package com.library.scraper.site.dto;
 
+import com.library.scraper.site.model.JavascriptRendering;
 import com.library.scraper.site.model.ScraperSite;
 
 import java.util.List;
@@ -11,6 +12,8 @@ public record ScraperSiteResponse(
         boolean enabled,
         String userAgent,
         int requestDelayMs,
+        JavascriptRendering javascriptRendering,
+        String waitForSelector,
         String chapterListUrlTemplate,
         String chapterUrlTemplate,
         List<ScraperRuleResponse> rules
@@ -23,6 +26,8 @@ public record ScraperSiteResponse(
                 site.isEnabled(),
                 site.getUserAgent(),
                 site.getRequestDelayMs(),
+                site.getJavascriptRendering(),
+                site.getWaitForSelector(),
                 site.getChapterListUrlTemplate(),
                 site.getChapterUrlTemplate(),
                 site.getRules().stream().map(ScraperRuleResponse::from).toList()

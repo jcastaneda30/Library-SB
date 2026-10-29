@@ -7,6 +7,7 @@ import com.library.scraper.site.dto.ScraperSiteResponse;
 import com.library.scraper.engine.NovelScraper;
 import com.library.scraper.engine.ScrapeException;
 import com.library.scraper.engine.ScrapedChapter;
+import com.library.scraper.site.model.JavascriptRendering;
 import com.library.scraper.site.model.ScraperRule;
 import com.library.scraper.site.model.ScraperSite;
 import com.library.scraper.site.repository.ScraperSiteRepository;
@@ -108,6 +109,8 @@ public class ScraperSiteService {
         site.setEnabled(request.enabled() == null || request.enabled());
         site.setUserAgent(blankToNull(request.userAgent()));
         site.setRequestDelayMs(request.requestDelayMs() == null ? 1000 : request.requestDelayMs());
+        site.setJavascriptRendering(request.javascriptRendering() == null ? JavascriptRendering.NONE : request.javascriptRendering());
+        site.setWaitForSelector(blankToNull(request.waitForSelector()));
         site.setChapterListUrlTemplate(blankToNull(request.chapterListUrlTemplate()));
         site.setChapterUrlTemplate(blankToNull(request.chapterUrlTemplate()));
         site.replaceRules(request.rules().stream().map(ScraperSiteService::toRule).toList());
