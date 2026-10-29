@@ -1,7 +1,10 @@
 package com.library.library.image.controller;
 
+import com.library.common.config.OpenApiConfig;
 import com.library.library.image.dto.ImageLocation;
 import com.library.library.image.service.ImageStorageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -12,12 +15,14 @@ import java.time.Duration;
 
 @RestController
 @RequestMapping("api/images")
+@Tag(name = OpenApiConfig.IMAGES)
 public class ImageController {
     private final ImageStorageService imageStorageService;
     public ImageController(ImageStorageService imageStorageService) {
         this.imageStorageService = imageStorageService;
     }
 
+    @Operation(summary = "Obtener una imagen", description = "En disco responde `200` con la imagen. En S3 responde `302` hacia una URL prefirmada temporal del bucket.")
     @GetMapping("/{id}")
     public ResponseEntity<?> getImage(@PathVariable Long id) {
         return imageStorageService.locate(id)

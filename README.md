@@ -8,7 +8,7 @@ guarda en la biblioteca.
 - [Arquitectura](#arquitectura)
 - [Puesta en marcha](#puesta-en-marcha)
 - [Configuración](#configuración)
-- [API](#api)
+- [Documentación de la API](#documentación-de-la-api)
 - [Scraper](#scraper)
 - [Base de datos](#base-de-datos)
 - [Tests](#tests)
@@ -22,6 +22,7 @@ guarda en la biblioteca.
 | Base de datos | PostgreSQL 17, migraciones con Flyway |
 | Scraping | jsoup (HTML), Jackson (JSON), Playwright + Chromium (páginas que cargan con JavaScript) |
 | Imágenes | Disco local o Amazon S3 (AWS SDK v2) |
+| Documentación | springdoc-openapi (Swagger UI) |
 | Build | Maven (wrapper incluido) |
 
 ## Arquitectura
@@ -94,7 +95,8 @@ Se instala una vez por máquina:
 ./mvnw spring-boot:run
 ```
 
-La API queda en `http://localhost:8080`.
+La API queda en `http://localhost:8080` y su documentación en
+[`http://localhost:8080/swagger-ui.html`](http://localhost:8080/swagger-ui.html).
 
 ## Configuración
 
@@ -136,53 +138,12 @@ AWS_REGION=us-east-1
 las de imágenes) usen el host público de las cabeceras `X-Forwarded-Proto`/`X-Forwarded-Host`. Si la API
 se expone sin proxy delante, conviene desactivarlo o configurar el proxy para que sobrescriba esas cabeceras.
 
-## API
+## Documentación de la API
 
-Los errores siguen el formato Problem Details (`application/problem+json`): `400` datos inválidos,
-`404` no encontrado, `502` el sitio scrapeado falló.
+Todos los endpoints, sus parámetros y los campos de cada petición están documentados en Swagger UI:
 
-### Biblioteca
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` `POST` | `/api/authors` | Listar / crear autores |
-| `GET` | `/api/authors/{id}` | Obtener autor |
-| `GET` `POST` | `/api/genres` | Listar / crear géneros |
-| `GET` | `/api/genres/{id}` | Obtener género |
-| `GET` `POST` | `/api/books` | Listar / crear libros |
-| `GET` | `/api/books/{id}` | Obtener libro |
-| `GET` | `/api/books/{bookId}/chapters` | Capítulos guardados de un libro |
-| `GET` | `/api/books/{bookId}/chapters/{number}` | Capítulo con sus párrafos |
-| `GET` | `/api/images/{id}` | Imagen (o redirección a S3) |
-
-Cada capítulo se devuelve como una lista ordenada de párrafos:
-
-```json
-{
-  "number": 1,
-  "title": "Chapter 1: Zeus’ Jewelry Store",
-  "sourceUrl": "https://novelbin.xyz/read/skyfire-avenue/chapter-1",
-  "paragraphs": [
-    { "position": 0, "type": "TEXT", "content": "Texto con <strong>negrita</strong>.", "imageUrl": null },
-    { "position": 1, "type": "IMAGE", "content": null, "imageUrl": "http://localhost:8080/api/images/3" }
-  ]
-}
-```
-
-Los párrafos `TEXT` traen HTML ya saneado. Solo se conservan los enriquecedores de texto: `b`, `strong`,
-`i`, `em`, `u`, `s`, `strike`, `del`, `sup`, `sub`, `small`, `mark`, `code` y `span` con `color`,
-`background-color`, `font-weight`, `font-style` o `text-decoration`.
-
-### Scraper
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` `POST` | `/api/scraper/sites` | Listar / registrar sitios |
-| `GET` `PUT` | `/api/scraper/sites/{id}` | Obtener / reemplazar un sitio |
-| `POST` | `/api/scraper/sites/{id}/preview` | Probar la configuración con una URL, sin guardar nada |
-| `GET` `POST` | `/api/scraper/novels` | Listar / pedir una novela |
-| `GET` | `/api/scraper/novels/{id}` | Estado y progreso de una petición |
-| `POST` | `/api/scraper/novels/{id}/refresh` | Volver a procesarla (capítulos nuevos o reintento) |
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- Especificación OpenAPI: `http://localhost:8080/v3/api-docs`
 
 ## Scraper
 
@@ -199,93 +160,36 @@ Los párrafos `TEXT` traen HTML ya saneado. Solo se conservan los enriquecedores
 Hay una petición por URL de novela: pedirla de nuevo la reutiliza y solo trae los capítulos que falten.
 Así sirve para actualizar novelas en curso o continuar una que falló.
 
-### Ejemplo con novelbin
+### Ejemplo: novelbin
 
-Registrar el sitio:
+Configuración probada para `https://novelbin.xyz/`. La ficha viene en el HTML; los capítulos se cargan
+con JavaScript y sus URLs se generan a partir del número de capítulos.
 
-```bash
-curl -X POST http://localhost:8080/api/scraper/sites \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "NovelBin",
-    "baseUrl": "https://novelbin.xyz/",
-    "requestDelayMs": 1500,
-    "javascriptRendering": "CHAPTERS",
-    "waitForSelector": ".reader-content p",
-    "chapterUrlTemplate": "{origin}/read/{slug}/chapter-{n}",
-    "rules": [
-      {"field": "TITLE",           "selector": "#ssr-novel-card h1"},
-      {"field": "COVER",           "selector": "#ssr-novel-card img", "attribute": "abs:src"},
-      {"field": "AUTHOR",          "selector": "#ssr-novel-card p:has(strong:containsOwn(Author))", "attribute": "ownText"},
-      {"field": "STATUS",          "selector": "#ssr-novel-card p:has(strong:containsOwn(Status))", "attribute": "ownText"},
-      {"field": "CHAPTER_COUNT",   "selector": "#ssr-novel-card p:has(strong:containsOwn(Total Chapters))", "attribute": "ownText"},
-      {"field": "GENRE",           "selector": "#ssr-novel-card div:has(> strong:containsOwn(Genres)) a"},
-      {"field": "SYNOPSIS",        "selector": "#ssr-novel-card section p"},
-      {"field": "CHAPTER_TITLE",   "selector": "span.reader-header-chapter"},
-      {"field": "CHAPTER_CONTENT", "selector": ".reader-content"},
-      {"field": "CHAPTER_EXCLUDE", "selector": "h1.sr-only"}
-    ]
-  }'
+```json
+{
+  "name": "NovelBin",
+  "baseUrl": "https://novelbin.xyz/",
+  "requestDelayMs": 1500,
+  "javascriptRendering": "CHAPTERS",
+  "waitForSelector": ".reader-content p",
+  "chapterUrlTemplate": "{origin}/read/{slug}/chapter-{n}",
+  "rules": [
+    {"field": "TITLE",           "selector": "#ssr-novel-card h1"},
+    {"field": "COVER",           "selector": "#ssr-novel-card img", "attribute": "abs:src"},
+    {"field": "AUTHOR",          "selector": "#ssr-novel-card p:has(strong:containsOwn(Author))", "attribute": "ownText"},
+    {"field": "STATUS",          "selector": "#ssr-novel-card p:has(strong:containsOwn(Status))", "attribute": "ownText"},
+    {"field": "CHAPTER_COUNT",   "selector": "#ssr-novel-card p:has(strong:containsOwn(Total Chapters))", "attribute": "ownText"},
+    {"field": "GENRE",           "selector": "#ssr-novel-card div:has(> strong:containsOwn(Genres)) a"},
+    {"field": "SYNOPSIS",        "selector": "#ssr-novel-card section p"},
+    {"field": "CHAPTER_TITLE",   "selector": "span.reader-header-chapter"},
+    {"field": "CHAPTER_CONTENT", "selector": ".reader-content"},
+    {"field": "CHAPTER_EXCLUDE", "selector": "h1.sr-only"}
+  ]
+}
 ```
 
-Pedir una novela con sus tres primeros capítulos y consultar el progreso:
-
-```bash
-curl -X POST http://localhost:8080/api/scraper/novels \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://novelbin.xyz/novel/skyfire-avenue", "includeChapters": true, "fromChapter": 1, "toChapter": 3}'
-
-curl http://localhost:8080/api/scraper/novels/1        # hasta que status sea COMPLETED o FAILED
-curl http://localhost:8080/api/books/{bookId}/chapters
-```
-
-Sin `includeChapters` solo se extrae la ficha. Sin `fromChapter`/`toChapter` se traen todos los capítulos.
-
-### Reglas de extracción
-
-Cada regla indica cómo sacar un dato de una página:
-
-| Campo | Descripción |
-|---|---|
-| `field` | Dato que extrae (tabla de abajo) |
-| `selector` | Selector CSS si la página es HTML; JSON Pointer (`/data/title`) si es JSON. El formato se detecta solo |
-| `attribute` | HTML: `text` (por defecto), `html`, `ownText` o un atributo (`abs:src`, `abs:href`...). JSON: puntero relativo a cada elemento |
-| `pattern` | Regex opcional; si tiene un grupo, se queda con el grupo 1 |
-
-Si hay varias reglas para el mismo campo, se prueban en orden y gana la primera que encuentre algo.
-
-| `field` | Página | Uso |
-|---|---|---|
-| `TITLE` | novela | Título (obligatorio) |
-| `COVER` | novela | URL de la portada |
-| `AUTHOR` | novela | Autor o autores |
-| `SYNOPSIS` | novela | Sinopsis; cada elemento es un párrafo |
-| `GENRE` | novela | Géneros |
-| `STATUS` | novela | Texto del estado, traducido a `ONGOING`, `COMPLETED`, `HIATUS` o `UNKNOWN` |
-| `CHAPTER_COUNT` | novela | Número de capítulos (`"912 Chapters"` → 912) |
-| `NOVEL_ID` | novela | Id interno del sitio, disponible como `{id}` en las plantillas |
-| `CHAPTER_LINK` | índice | Enlaces a los capítulos |
-| `CHAPTER_LIST_NEXT` | índice | Siguiente página del índice |
-| `CHAPTER_TITLE` | capítulo | Título del capítulo |
-| `CHAPTER_CONTENT` | capítulo | Contenedor del texto, que se divide en párrafos |
-| `CHAPTER_EXCLUDE` | capítulo | Elementos que se quitan del contenido (anuncios, notas...) |
-
-### Lista de capítulos
-
-- **Con reglas `CHAPTER_LINK`**: los capítulos se leen del índice (`chapterListUrlTemplate` o la propia
-  página de la novela), siguiendo `CHAPTER_LIST_NEXT` si está paginado.
-- **Sin `CHAPTER_LINK`**: las URLs se generan con `chapterUrlTemplate` del 1 a `CHAPTER_COUNT`.
-
-Variables de las plantillas (con `https://novelbin.xyz/novel/skyfire-avenue`):
-
-| Variable | Valor |
-|---|---|
-| `{url}` | `https://novelbin.xyz/novel/skyfire-avenue` |
-| `{origin}` | `https://novelbin.xyz` |
-| `{slug}` | `skyfire-avenue` |
-| `{id}` | Valor de `NOVEL_ID` |
-| `{n}` / `{i}` | Número de capítulo desde 1 / desde 0 |
-| `{chapter}` | Cada valor de `CHAPTER_LINK` (si hay `chapterUrlTemplate`) |
+Qué significa cada campo y cada tipo de regla está en Swagger, en el esquema de la petición de registrar
+un sitio.
 
 ### Sitios que cargan con JavaScript
 
